@@ -931,6 +931,18 @@ impl Plot {
                         player.client.send_packet(&player_info);
                     }
                 }
+                BroadcastMessage::Autosave => {
+                    // TODO: maybe we should keep track of whether the plot was changed since last
+                    // save to avoid unnecessary work?
+                    self.broadcast_plot_chat_message("Autosaving plot");
+                    let autosave_start = Instant::now();
+                    self.save();
+                    let autosave_duration = Instant::now().duration_since(autosave_start);
+                    self.broadcast_plot_chat_message(&format!(
+                        "Autosaving done in {:?}",
+                        autosave_duration
+                    ));
+                }
             }
         }
         // Handle messages from the private message channel

@@ -1,6 +1,7 @@
 use crate::permissions::PermissionsConfig;
 use serde::{Deserialize, Serialize};
 use std::io::Write;
+use std::time::Duration;
 use std::{fs, sync::LazyLock};
 use toml_edit::{value, DocumentMut};
 
@@ -32,11 +33,12 @@ impl<T> ConfigSerializeDefault for Option<T> {
 
 macro_rules! gen_config {
     (
-        $( $name:ident: $type:ty = $default:expr),*
+        $( $(#[$attr:meta])* $name:ident: $type:ty = $default:expr),*
     ) => {
         #[derive(Serialize, Deserialize)]
         pub struct ServerConfig {
             $(
+                $(#[$attr])*
                 pub $name: $type,
             )*
         }
@@ -73,7 +75,9 @@ gen_config! {
     luckperms: Option<PermissionsConfig> = None,
     block_in_hitbox: bool = true,
     auto_redpiler: bool = false,
-    velocity: Option<VelocityConfig> = None
+    velocity: Option<VelocityConfig> = None,
+    #[serde(with = "humantime_serde")]
+    autosave_interval: Option<Duration> = None
 }
 
 #[derive(Serialize, Deserialize)]

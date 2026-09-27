@@ -77,6 +77,8 @@ pub enum BroadcastMessage {
     PlayerLeft(u128),
     /// This message is broadcasted when a player changes their gamemode,
     PlayerUpdateGamemode(u128, Gamemode),
+    /// This message is broadcasted when a scheduled autosave should occur
+    Autosave,
     /// This message is broadcasted when the server is stopping, either through the stop
     /// command or through the ctrl+c handler.
     Shutdown,
@@ -130,6 +132,7 @@ pub struct MinecraftServer {
     online_players: FxHashMap<u128, PlayerListEntry>,
     running_plots: Vec<PlotListEntry>,
     whitelist: Option<Vec<WhitelistEntry>>,
+    last_autosave: Instant,
 }
 
 impl MinecraftServer {
@@ -185,6 +188,7 @@ impl MinecraftServer {
             online_players: FxHashMap::default(),
             running_plots: Vec::new(),
             whitelist,
+            last_autosave: Instant::now(),
         };
 
         // Load the spawn area plot on server start
@@ -650,6 +654,14 @@ impl MinecraftServer {
                 client_idx += 1;
             }
             clients_len = new_len;
+        }
+
+        if let Some(autosave_interval) = CONFIG.autosave_interval
+            && Instant::now().duration_since(self.last_autosave) > autosave_interval
+        {
+            info!("Autosaving plots");
+            self.broadcaster.broadcast(BroadcastMessage::Autosave);
+            self.last_autosave = Instant::now();
         }
     }
 }
